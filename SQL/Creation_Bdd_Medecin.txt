@@ -1,0 +1,83 @@
+CREATE DATABASE medecin;
+USE medecin;
+#------------------------------------------------------------
+#        Script MySQL.
+#------------------------------------------------------------
+
+#------------------------------------------------------------
+# Table: Patient
+#------------------------------------------------------------
+
+CREATE TABLE Patient(
+        id_patient     Int  Auto_increment  NOT NULL ,
+        nom_patient    VARCHAR(20) NOT NULL,
+        prenom_patient    VARCHAR(20) NOT NULL,
+        autre_prenom_patient  VARCHAR(50),
+        email  VARCHAR(50) NOT NULL,
+        date_naissance  DATE NOT NULL,
+        historique  VARCHAR(250),
+        adresse  VARCHAR (50) NOT NULL,
+        sexe  VARCHAR (10) NOT NULL,
+        classification  VARCHAR (20) NOT NULL,
+        telephone Int NOT NULL,
+        moyen_connaissance VARCHAR (20) NOT NULL
+	,CONSTRAINT Patient_PK PRIMARY KEY (id_patient)
+)ENGINE=InnoDB;
+
+
+#------------------------------------------------------------
+# Table: Rendez_Vous
+#------------------------------------------------------------
+
+CREATE TABLE Rendez_Vous(
+        id_rendezvous    Int  Auto_increment  NOT NULL ,
+        date_rendezvous   DATE NOT NULL,
+        heure_rendezvous  VARCHAR (10) NOT NULL 
+	,CONSTRAINT Rendez_Vous_PK PRIMARY KEY (id_rendezvous)
+)ENGINE=InnoDB;
+
+
+#------------------------------------------------------------
+# Table: Conclusion
+#------------------------------------------------------------
+
+CREATE TABLE Conclusion(
+        id_conclusion Int  Auto_increment  NOT NULL ,
+        mots_cles VARCHAR (100) NOT NULL ,
+        postures VARCHAR (100) NOT NULL ,
+        comportement VARCHAR (100) NOT NULL
+	,CONSTRAINT Conclusion_PK PRIMARY KEY (id_conclusion)
+)ENGINE=InnoDB;
+
+
+
+#------------------------------------------------------------
+# Table: Consultation
+#------------------------------------------------------------
+
+CREATE TABLE Consultation(
+        id_consultation Int  Auto_increment  NOT NULL ,
+        id_patient Int NOT NULL ,
+        id_conclusion Int NOT NULL ,
+        motif  VARCHAR (20) NOT NULL ,
+        anxiete   Int NOT NULL 
+	,CONSTRAINT Consultation_PK PRIMARY KEY (id_consultation)
+
+	,CONSTRAINT Consultation_Patient_FK FOREIGN KEY (id_patient) REFERENCES Patient(id_patient)
+        ,CONSTRAINT Consultation_Conclusion_FK FOREIGN KEY (id_conclusion) REFERENCES Conclusion(id_conclusion)
+)ENGINE=InnoDB;
+
+
+#------------------------------------------------------------
+# Table: Payement
+#------------------------------------------------------------
+
+CREATE TABLE Payement(
+        id_payement Int  Auto_increment  NOT NULL ,
+        date_payement DATE NOT NULL ,
+        heure_payement TIME NOT NULL ,
+        prix FLOAT NOT NULL ,
+        moyen_reglement VARCHAR (20) NOT NULL
+	,CONSTRAINT Payement_PK PRIMARY KEY (id_payement)
+)ENGINE=InnoDB;
+
