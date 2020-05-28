@@ -1,0 +1,27 @@
+lahloukarim@free.fr
+
+COURS 1 - conception de bases de données
+
+JMerise (payant, version étudiante gratuite)
+AnalyseSI (mais que mysql & sait pas faire l'héritage)
+va travailler avec Oracle
+
+3 possibilités d'action : lecture, écriture, execute
+3 catégories d'utilisation : propriétaire, groupe, autres
+bases de données relationnelles : vérifient les propriétés A(tomicité)C(onsistance)I(solation)D(urabilité)
+philosophie orienté objet : ne peut pas le séparer de ses services
+
+schema (ou modèle) conceptuel de données (schéma ER ou schéma E1) : entités & associations sont importantes ++
+modèle conceptuel de traitements est différent
+
+entités : objets que nous allons manipuler (entitée étudiant, cours, ville, ...)
+atribut atomique : indivisible, ne peut pas être opposé
+
+schéma relationnel : modèle logique de données, c'est une relation ayant des attributs dont l'un est une clé primaire, et certains peuvent être une clé étrangères afin de se rattacher à une autre relation/une autre entité 
+cette clé étrangère doit avoir des contraintes comme même type dans une entité & l'autre, elle doit être unique (pas forcément primaire !)
+
+règles de la traduction MCD -> MLD :
+- toute entité devient relation, identifiant d'entité devient la clé primaire de la relation
+- toute association [N:M] devient relation, sa clé primaire sera la fusion des identifiants qu'elle relie et chacun est clé étrangère
+- toute association [1:N] disparait et l'identifiant du côté N devient clé étrangère du côté simple
+
