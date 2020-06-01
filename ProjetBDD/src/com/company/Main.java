@@ -12,7 +12,7 @@ public class Main extends JFrame {
         JLabel select = new JLabel("Sélectionnez l'utilisateur.");
 
         JComboBox<String> auth = new JComboBox<>(new String[]{"Admin", "Patient"});
-        auth.setPreferredSize(new Dimension(350,200));
+        auth.setPreferredSize(new Dimension(150,30));
         auth.setSelectedItem(null);
 
         JButton valider = new JButton("Valider");

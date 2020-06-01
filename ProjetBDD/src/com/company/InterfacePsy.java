@@ -14,7 +14,7 @@ public class InterfacePsy extends JFrame {
     private final String URL = "url";
     private final String user = "admin";
     private final String mdp = "password";
-    //private Consultation consultation;
+    private Consultation consultation;
 
     public InterfacePsy(){
         JFrame settings = new JFrame("Paramètres");
@@ -301,7 +301,164 @@ public class InterfacePsy extends JFrame {
         consult.setLocationRelativeTo(null);
         consult.setResizable(false);
 
-        //to be continued
+        DefaultTableModel tableModel = new DefaultTableModel(){
+            @Override
+            public boolean isCellEditable(int row, int column) { return true; }
+        };
+
+        tableModel.addColumn("Date");
+        tableModel.addColumn("Heure");
+        tableModel.addColumn("Prix");
+        tableModel.addColumn("Reglement");
+
+        tableModel.addRow(new Object[]{});
+        tableModel.addRow(new Object[]{});
+
+        JTable table = new JTable(tableModel);
+        table.setCellSelectionEnabled(true);
+
+        JPanel panel = new JPanel();
+        JButton val = new JButton("Valider");
+        val.addActionListener(e -> {
+            if(tableModel.getValueAt(0, 0).equals("") || tableModel.getValueAt(0,1).equals("") || tableModel.getValueAt(0, 2).equals("") || tableModel.getValueAt(0,3).equals(""))
+                JOptionPane.showMessageDialog(consult, "Veuillez remplir tous les champs");
+            else {
+                String date = tableModel.getValueAt(0, 0).toString(); //Récupération des informations dans des variables locales
+                try { date = formatDate(date);
+                } catch (ParseException parseException) { parseException.printStackTrace(); }
+                String heure = tableModel.getValueAt(0, 1).toString();
+                int prix = Integer.parseInt(tableModel.getValueAt(0, 2).toString());
+                String reglement = tableModel.getValueAt(0, 3).toString();
+                new Consultation(date, heure, prix, reglement);
+
+                if(heure.equals("00:00:00") || heure.equals("00:30:00") ||
+                        heure.equals("01:00:00") || heure.equals("01:30:00") ||
+                        heure.equals("02:00:00") || heure.equals("02:30:00") ||
+                        heure.equals("03:00:00") || heure.equals("03:30:00") ||
+                        heure.equals("04:00:00") || heure.equals("04:30:00") ||
+                        heure.equals("05:00:00") || heure.equals("05:30:00") ||
+                        heure.equals("06:00:00") || heure.equals("06:30:00") ||
+                        heure.equals("07:00:00") || heure.equals("07:30:00") ||
+
+                        heure.equals("12:00:00") || heure.equals("12:30:00") ||
+                        heure.equals("13:00:00") || heure.equals("13:30:00") ||
+
+                        heure.equals("20:00:00") || heure.equals("20:30:00") ||
+                        heure.equals("21:00:00") || heure.equals("21:30:00") ||
+                        heure.equals("22:00:00") || heure.equals("22:30:00") ||
+                        heure.equals("23:00:00") || heure.equals("23:30:00"))
+                    JOptionPane.showMessageDialog(consult, "Vous ne pouvez pas prendre rendez-vous sur vos heures non travaillées");
+                else {
+                    boolean check = false, sunday = false;
+                    try {
+                        check = checkFree(date, heure);
+                    } catch (SQLException exception) { exception.printStackTrace(); }
+                    if(check){
+                        try {
+                            Connection connect = DriverManager.getConnection(URL, user, mdp);
+                            Statement statement = connect.createStatement();
+                            String sql = "insert into Consultation (DateConsultation, Heure, Prix, Reglement)" +
+                                    " values ('" + date + "','" + heure + "', '" + prix + "', '" + reglement + "')";
+                            statement.executeUpdate(sql);
+
+                            int numdossier1, numconsult, numdossier2;
+                            switch(nbPatients){
+                                case 1:
+                                    String sql2 = "select NumeroDossier from Patient where Prenom = '" + args[0] + "' and Nom = '" + args[1] + "'";
+                                    ResultSet resultSet = statement.executeQuery(sql2);
+                                    resultSet.next();
+                                    numdossier1 = resultSet.getInt("NumeroDossier");
+
+                                    String sql3 = "select NumeroConsultation from Consultation where DateConsultation = '" + date + "' and Heure = '" + heure + "'";
+                                    ResultSet resultSet2 = statement.executeQuery(sql3);
+                                    resultSet2.next();
+                                    numconsult = resultSet2.getInt("NumeroConsultation");
+
+                                    String sql4 = "insert into patientenconsult (NumeroDossier, NumeroConsultation) values ('" + numdossier1 + "', '" + numconsult + "')";
+                                    statement.executeUpdate(sql4);
+                                    break;
+                                case 2:
+                                    String sql5 = "select NumeroDossier from Patient where Prenom = '" + args[0] + "' and Nom = '" + args[1] + "'";
+                                    ResultSet resultSet3 = statement.executeQuery(sql5);
+                                    resultSet3.next();
+                                    numdossier1 = resultSet3.getInt("NumeroDossier");
+
+                                    String sql6 = "select NumeroDossier from Patient where Prenom = '" + args[2] + "' and Nom = '" + args[3] + "'";
+                                    ResultSet resultSet4 = statement.executeQuery(sql6);
+                                    resultSet4.next();
+                                    numdossier2 = resultSet4.getInt("NumeroDossier");
+
+                                    String sql7 = "select NumeroConsultation from Consultation where DateConsultation = '" + date + "' and Heure = '" + heure + "'";
+                                    ResultSet resultSet5 = statement.executeQuery(sql7);
+                                    resultSet5.next();
+                                    numconsult = resultSet5.getInt("NumeroConsultation");
+
+                                    String sql8 = "insert into patientenconsult (NumeroDossier, NumeroConsultation) values ('" + numdossier1 + "', '" + numconsult + "' )";
+                                    statement.executeUpdate(sql8);
+
+                                    String sql9 = "insert into patientenconsult (NumeroDossier, NumeroConsultation) values ('" + numdossier2 + "', '" + numconsult + "' )";
+                                    statement.executeUpdate(sql9);
+                                    break;
+                                case 3:
+                                    String sql10 = "select NumeroDossier from Patient where Prenom = '" + args[0] + "' and Nom = '" + args[1] + "'";
+                                    ResultSet resultSet6 = statement.executeQuery(sql10);
+                                    resultSet6.next();
+                                    numdossier1 = resultSet6.getInt("NumeroDossier");
+
+                                    String sql11 = "select NumeroDossier from Patient where Prenom = '" + args[2] + "' and Nom = '" + args[3] + "'";
+                                    ResultSet resultSet7 = statement.executeQuery(sql11);
+                                    resultSet7.next();
+                                    numdossier2 = resultSet7.getInt("NumeroDossier");
+
+                                    String sql12 = "select NumeroDossier from Patient where Prenom = '" + args[4] + "' and Nom = '" + args[5] + "'";
+                                    ResultSet resultSet8 = statement.executeQuery(sql12);
+                                    resultSet8.next();
+                                    int numdossier3 = resultSet8.getInt("NumeroDossier");
+
+                                    String sql13 = "select NumeroConsultation from Consultation where DateConsultation = '" + date + "' and Heure = '" + heure + "'";
+                                    ResultSet resultSet9 = statement.executeQuery(sql13);
+                                    resultSet9.next();
+                                    numconsult = resultSet9.getInt("NumeroConsultation");
+
+                                    String sql14 = "insert into patientenconsult (NumeroDossier, NumeroConsultation) values ('" + numdossier1 + "', '" + numconsult + "' )";
+                                    statement.executeUpdate(sql14);
+
+                                    String sql15 = "insert into patientenconsult (NumeroDossier, NumeroConsultation) values ('" + numdossier2 + "', '" + numconsult + "' )";
+                                    statement.executeUpdate(sql15);
+
+                                    String sql16 = "insert into patientenconsult (NumeroDossier, NumeroConsultation) values ('" + numdossier3 + "', '" + numconsult + "' )";
+                                    statement.executeUpdate(sql16);
+                                    break;
+                            }
+
+                            consult.dispose();
+                            consult.removeAll();
+                            System.exit(0);
+                        } catch (SQLException e1) {
+                            e1.printStackTrace();
+                        }
+                    }else{
+                        if(!check)
+                            JOptionPane.showMessageDialog(consult, "Ce rendez-vous est déjà pris");
+                    }
+                }
+            }
+        });
+
+        panel.add(val);
+
+        JPanel disclaimer = new JPanel();
+        JLabel label = new JLabel("Les rendez-vous se prennent par créneau de 30 min" +
+                " - de 08:00 à 12:00 et de 14:00 à 20:00");
+        disclaimer.add(label);
+
+        consult.add(disclaimer, BorderLayout.NORTH);
+
+        consult.add(new JScrollPane(table), BorderLayout.CENTER); //Ajout des éléments sur la fenêtre
+        consult.add(panel, BorderLayout.SOUTH);
+
+        consult.pack();
+        consult.setVisible(true);
     }
 
     public void SeeRdvFrame() throws SQLException{
@@ -751,7 +908,6 @@ public class InterfacePsy extends JFrame {
         try{
             Connection connect = DriverManager.getConnection(URL, user, mdp);
             Statement statement = connect.createStatement();
-            //Récupération des informations depuis la base de données
             String sql = "select concat (DateConsultation, ' ', Heure) as Consult from Consultation c" +
                     " inner join patientenconsult e on c.NumeroConsultation = e.NumeroConsultation" +
                     " inner join patient p on e.NumeroDossier = p.NumeroDossier" +
