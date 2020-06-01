@@ -11,9 +11,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
 public class InterfacePsy extends JFrame {
-    private final String URL = "url";
-    private final String user = "admin";
-    private final String mdp = "password";
+    static final String JDBC_DRIVER = "org.mariadb.jdbc.Driver"; //le nom du driver 
+    static final String URL = "jdbc: mariadb:localhost:medecin"; 
+    static final String user = "root"; 
+    static final String mdp = "projetjava"; 
     private Consultation consultation;
 
     public InterfacePsy(){
