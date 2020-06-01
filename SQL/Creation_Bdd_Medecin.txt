@@ -13,12 +13,14 @@ CREATE TABLE Patient(
         nom_patient    VARCHAR(20) NOT NULL,
         prenom_patient    VARCHAR(20) NOT NULL,
         autre_prenom_patient  VARCHAR(50),
+        mot_de_passe VARCHAR (50) NOT NULL,
         email  VARCHAR(50) NOT NULL,
         date_naissance  DATE NOT NULL,
         historique  VARCHAR(250),
         adresse  VARCHAR (50) NOT NULL,
         sexe  VARCHAR (10) NOT NULL,
         classification  VARCHAR (20) NOT NULL,
+        profession VARCHAR (20) NOT NULL,
         telephone Int NOT NULL,
         moyen_connaissance VARCHAR (20) NOT NULL
 	,CONSTRAINT Patient_PK PRIMARY KEY (id_patient)
@@ -43,10 +45,13 @@ CREATE TABLE Rendez_Vous(
 
 CREATE TABLE Conclusion(
         id_conclusion Int  Auto_increment  NOT NULL ,
+        id_consultation INT NOT NULL,
         mots_cles VARCHAR (100) NOT NULL ,
         postures VARCHAR (100) NOT NULL ,
         comportement VARCHAR (100) NOT NULL
+
 	,CONSTRAINT Conclusion_PK PRIMARY KEY (id_conclusion)
+        ,CONSTRAINT Conclusion_Consultation_FK FOREIGN KEY (id_consultation) REFERENCES Consultation(id_consultation)
 )ENGINE=InnoDB;
 
 
@@ -59,6 +64,11 @@ CREATE TABLE Consultation(
         id_consultation Int  Auto_increment  NOT NULL ,
         id_patient Int NOT NULL ,
         id_conclusion Int NOT NULL ,
+        DateConsultation DATE NOT NULL,
+        Heure TIME NOT NULL,
+        Prix FLOAT NOT NULL,
+        Reglement VARCHAR (20) NOT NULL,
+        Effectue VARCHAR (20) NOT NULL,
         motif  VARCHAR (20) NOT NULL ,
         anxiete   Int NOT NULL 
 	,CONSTRAINT Consultation_PK PRIMARY KEY (id_consultation)
@@ -79,5 +89,19 @@ CREATE TABLE Payement(
         prix FLOAT NOT NULL ,
         moyen_reglement VARCHAR (20) NOT NULL
 	,CONSTRAINT Payement_PK PRIMARY KEY (id_payement)
+)ENGINE=InnoDB;
+
+
+#------------------------------------------------------------
+# Table: Profession
+#------------------------------------------------------------
+
+CREATE TABLE Profession(
+        titre Int  Auto_increment  NOT NULL ,
+        id_patient INT NOT NULL,
+        DateProfession DATE NOT NULL
+        
+        ,CONSTRAINT Profession_PK PRIMARY KEY (titre)
+	,CONSTRAINT Profession_Patient_FK FOREIGN KEY (id_patient) REFERENCES Patient(id_patient)
 )ENGINE=InnoDB;
 
