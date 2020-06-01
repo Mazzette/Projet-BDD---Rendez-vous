@@ -12,8 +12,23 @@ import static javax.swing.LayoutStyle.ComponentPlacement.UNRELATED;
 
 public class Patient extends JFrame {
 
-    private final String url = "url";
-    private final String user = "user", mdp = "password";
+	static final String JDBC_DRIVER = "org.mariadb.jdbc.Driver"; //le nom du driver 
+    static final String DB_URL = "jdbc: mariadb:localhost:medecin"; 
+    //  Database credentials
+    static final String USER = "root"; 
+    static final String PASS = "projetjava"; 
+    
+    private Connection conn = null;
+    private Statement stmt = null;
+    private PreparedStatement preparedStatement = null;
+    private ResultSet resultSet = null;
+
+    public Connection getConn() {
+        return conn;
+    }
+    public ResultSet getResultSet() {
+        return resultSet;
+    }
 
     private JTextField userField, nomField, prenomField, moyenConnaissanceField, adresseField,
             sexeField, professionField, classificationField, dateProfessionField, nbTelephoneField;
@@ -87,22 +102,25 @@ public class Patient extends JFrame {
 
     private void doAuthentification() {
         try {
-            Connection connect = DriverManager.getConnection(url, user, mdp);
-            Statement statement = connect.createStatement();
-            String request = "Select MotDePasse from Patient WHERE Email = '" + userField.getText() + "'";
-            ResultSet result = statement.executeQuery(request);
+        	Class.forName(JDBC_DRIVER);
+            // Setup the connection with the DB
+            conn = DriverManager
+                    .getConnection(DB_URL, USER, PASS);
+            stmt = conn.createStatement();
+            String request = "Select mot_de_passe from Patient WHERE email = '" + userField.getText() + "'";
+            ResultSet result = stmt.executeQuery(request);
             if(!result.next()){
                 container.removeAll();
                 dispose();
-                JOptionPane.showMessageDialog(container, "Vous n'Ãªtes pas patient");
+                JOptionPane.showMessageDialog(container, "Vous n'êtes pas patient");
                 new Patient();
             } else {
                 String mdp;
-                mdp = result.getString("MotDePasse");
+                mdp = result.getString("mot_de_passe");
                 if (mdpField.getText().equals(mdp)) {
                     container.removeAll();
                     dispose();
-                    JOptionPane.showMessageDialog(container, "Connexion rÃ©ussie");
+                    JOptionPane.showMessageDialog(container, "Connexion réussie");
                     storePatientInfo(userField.getText());
                     chooseAction();
                 } else {
@@ -112,7 +130,7 @@ public class Patient extends JFrame {
                     new Patient();
                 }
             }
-        } catch (SQLException e) {
+        } catch (SQLException | ClassNotFoundException e) {
             System.out.println("Exception is " + e.getMessage());
             e.printStackTrace();
         }
@@ -199,7 +217,7 @@ public class Patient extends JFrame {
         validerPatient.addActionListener(e -> {
             try {
                 WritePatientInfo();
-            } catch (SQLException ex) {
+            } catch (SQLException | ClassNotFoundException ex) {
                 ex.printStackTrace();
             }
             dispose();
@@ -291,92 +309,98 @@ public class Patient extends JFrame {
 
     public void storePatientInfo(String user) {
         try {
-            Connection connect = DriverManager.getConnection(url, user, mdp);
-            Statement statement = connect.createStatement();
-            String sql = "select NumeroDossier, Nom, Prenom, DateDeNaissance, Sexe, Adresse, MoyenConnaissance, Email, MotDePasse, Classification, NumeroTel, Profession " +
+        	Class.forName(JDBC_DRIVER);
+           
+            conn = DriverManager
+                    .getConnection(DB_URL, USER, PASS);
+            stmt = conn.createStatement();
+            String sql = "select id_patient, nom_patient, prenom_patient, date_naissance, sexe, adresse, moyen_connaissance, email, mot_de_passe, classification, telephone, profession " +
                     "from Patient " +
-                    "where Email = '" + user + "'";
-            ResultSet resultSet = statement.executeQuery(sql);
+                    "where email = '" + user + "'";
+            ResultSet resultSet = stmt.executeQuery(sql);
             while (resultSet.next()) {
-                setNbDossier(resultSet.getInt("NumeroDossier"));
-                setNom(resultSet.getString("Nom"));
-                setPrenom(resultSet.getString("Prenom"));
-                setDateNaissance(resultSet.getString("DateDeNaissance"));
-                setSexe(resultSet.getString("Sexe").charAt(0));
-                setAdresse(resultSet.getString("Adresse"));
-                setMoyenConnaissance(resultSet.getString("MoyenConnaissance"));
-                setEmail(resultSet.getString("Email"));
-                setMdp(resultSet.getString("MotDePasse"));
-                setClassification(resultSet.getString("Classification"));
-                setNbTelephone(resultSet.getInt("NumeroTel"));
-                setProfession(new Profession(resultSet.getInt("NumeroDossier"), resultSet.getString("Profession")));
+                setNbDossier(resultSet.getInt("id_patient"));
+                setNom(resultSet.getString("nom_patient"));
+                setPrenom(resultSet.getString("prenom_patient"));
+                setDateNaissance(resultSet.getString("date_naissance"));
+                setSexe(resultSet.getString("sexe").charAt(0));
+                setAdresse(resultSet.getString("adresse"));
+                setMoyenConnaissance(resultSet.getString("moyen_connaissance"));
+                setEmail(resultSet.getString("email"));
+                setMdp(resultSet.getString("mot_de_passe"));
+                setClassification(resultSet.getString("classification"));
+                setNbTelephone(resultSet.getInt("telephone"));
+                setProfession(new Profession(resultSet.getInt("id_patient"), resultSet.getString("profession")));
             }
-        } catch (SQLException e) {
+        } catch (SQLException | ClassNotFoundException e) {
             System.out.println("Exception is " + e.getMessage());
         }
     }
 
-    public void WritePatientInfo() throws SQLException {
-        Connection connect = DriverManager.getConnection(url, user, password);
-        Statement statement = connect.createStatement();
-        String request = "Select Nom, Prenom from Patient where Email = '" + userField.getText() + "' and MotDePasse =  '" + mdpField.getText() + "'";
-        ResultSet result = statement.executeQuery(request);
+    public void WritePatientInfo() throws SQLException, ClassNotFoundException {
+    	Class.forName(JDBC_DRIVER);
+        
+        conn = DriverManager
+                .getConnection(DB_URL, USER, PASS);
+        stmt = conn.createStatement();
+        String request = "Select nom_patient, prenom_patient from Patient where email = '" + userField.getText() + "' and mot_de_passe =  '" + mdpField.getText() + "'";
+        ResultSet result = stmt.executeQuery(request);
         result.next();
         if (!result.next()) {
-            String sql = "insert into Patient (Nom, Prenom, DateDeNaissance, Sexe, Adresse, MoyenConnaissance, NumeroTel," +
-                    "Email, MotDePasse, Classification) values ('" + nomField.getText() + "','" + prenomField.getText() + "','" +
+            String sql = "insert into Patient (nom_patient, prenom_patient, date_naissance, sexe, adresse, moyen_connaissance, telephone," +
+                    "email, mot_de_passe, classification) values ('" + nomField.getText() + "','" + prenomField.getText() + "','" +
                     dateNaissanceField.getText() + "','" + sexeField.getText() + "','" + adresseField.getText() + "','" +
                     moyenConnaissanceField.getText() + "','" + nbTelephoneField.getText() + "','" + userField.getText() + "','" +
                     mdpField.getText() + "','" + classificationField.getText() + "')";
-            statement.executeUpdate(sql);
-            Statement statement1 = connect.createStatement();
-            String sql2 = "Select NumeroDossier, Nom, Prenom, DateDeNaissance, Sexe, Adresse, MoyenConnaissance, NumeroTel, Email, MotDePasse" +
-                    " from Patient WHERE Email = '" + userField.getText() + "' and MotDePasse = '" + mdpField.getText() + "'";
+            stmt.executeUpdate(sql);
+            Statement statement1 = conn.createStatement();
+            String sql2 = "Select id_patient, nom_patient, prenom_patient, date_naissance, sexe, adresse, moyen_connaissance, telephone, email, mot_de_passe" +
+                    " from Patient WHERE email = '" + userField.getText() + "' and mot_de_passe = '" + mdpField.getText() + "'";
             ResultSet resultSet = statement1.executeQuery(sql2);
 
             while (resultSet.next()) {
-                setNbDossier(resultSet.getInt("NumeroDossier"));
-                setNom(resultSet.getString("Nom"));
-                setPrenom(resultSet.getString("Prenom"));
-                setDateNaissance(resultSet.getString("DateDeNaissance"));
-                setSexe(resultSet.getString("Sexe").charAt(0));
-                setAdresse(resultSet.getString("Adresse"));
-                setMoyenConnaissance(resultSet.getString("MoyenConnaissance"));
-                setNbTelephone(resultSet.getInt("NumeroTel"));
-                setEmail(resultSet.getString("Email"));
-                setMdp(resultSet.getString("MotDePasse"));
+                setNbDossier(resultSet.getInt("id_patient"));
+                setNom(resultSet.getString("nom_patient"));
+                setPrenom(resultSet.getString("prenom_patient"));
+                setDateNaissance(resultSet.getString("date_naissance"));
+                setSexe(resultSet.getString("sexe").charAt(0));
+                setAdresse(resultSet.getString("adresse"));
+                setMoyenConnaissance(resultSet.getString("moyen_connaissance"));
+                setNbTelephone(resultSet.getInt("telephone"));
+                setEmail(resultSet.getString("email"));
+                setMdp(resultSet.getString("mot_de_passe"));
             }
             new Patient(nom, prenom, moyenConnaissance, adresse, dateNaissance, classification, sexe, nbTelephone);
             Profession profession = new Profession(professionField.getText(), dateProfessionField.getText(), getNbDossier());
             setProfession(profession);
 
-            String sql3 = "insert into Profession (NumeroDossier, Titre, DateProfession) values ('" + getNbDossier() + "', '" + professionField.getText() + "', '" + dateProfessionField.getText() + "')";
-            statement.executeUpdate(sql3);
+            String sql3 = "insert into Profession (id_patient, Titre, DateProfession) values ('" + getNbDossier() + "', '" + professionField.getText() + "', '" + dateProfessionField.getText() + "')";
+            stmt.executeUpdate(sql3);
         } else {
-            String sql = "Select NumeroDossier from Patient" +
-                    " WHERE Nom = '" + nomField.getText() + "' and Prenom = '" + prenomField.getText() + "'";
-            ResultSet resultSet = statement.executeQuery(sql);
+            String sql = "Select id_patient from Patient" +
+                    " WHERE nom_patient = '" + nomField.getText() + "' and prenom_patient = '" + prenomField.getText() + "'";
+            ResultSet resultSet = stmt.executeQuery(sql);
             resultSet.next();
-            int num = resultSet.getInt("NumeroDossier");
-            String sql2 = "update Patient set Email = '" + userField.getText() + "', MotDePasse = '" + mdpField.getText() + "'" +
-                    " where NumeroDossier = '" + num + "'";
-            statement.executeUpdate(sql2);
+            int num = resultSet.getInt("id_patient");
+            String sql2 = "update Patient set email = '" + userField.getText() + "', mot_de_passe = '" + mdpField.getText() + "'" +
+                    " where id_patient = '" + num + "'";
+            stmt.executeUpdate(sql2);
 
-            String sql3 = "Select NumeroDossier, Nom, Prenom, DateDeNaissance, Sexe, Adresse, MoyenConnaissance, NumeroTel, Email, MotDePasse" +
-                    " from Patient WHERE Email = '" + userField.getText() + "' and MotDePasse = '" + mdpField.getText() + "'";
-            ResultSet resultSet1 = statement.executeQuery(sql3);
+            String sql3 = "Select id_patient, nom_patient, prenom_patient, date_naissance, sexe, adresse, moyen_connaissance, telephone, email, mot_de_passe" +
+                    " from Patient WHERE email = '" + userField.getText() + "' and mot_de_passe = '" + mdpField.getText() + "'";
+            ResultSet resultSet1 = stmt.executeQuery(sql3);
 
             while (resultSet1.next()) {
-                setNbDossier(resultSet1.getInt("NumeroDossier"));
-                setNom(resultSet1.getString("Nom"));
-                setPrenom(resultSet1.getString("Prenom"));
-                setDateNaissance(resultSet1.getString("DateDeNaissance"));
-                setSexe(resultSet1.getString("Sexe").charAt(0));
-                setAdresse(resultSet1.getString("Adresse"));
-                setMoyenConnaissance(resultSet1.getString("MoyenConnaissance"));
-                setNbTelephone(resultSet1.getInt("NumeroTel"));
-                setEmail(resultSet1.getString("Email"));
-                setMdp(resultSet1.getString("MotDePasse"));
+                setNbDossier(resultSet1.getInt("id_patient"));
+                setNom(resultSet1.getString("nom_patient"));
+                setPrenom(resultSet1.getString("prenom_patient"));
+                setDateNaissance(resultSet1.getString("date_naissance"));
+                setSexe(resultSet1.getString("sexe").charAt(0));
+                setAdresse(resultSet1.getString("adresse"));
+                setMoyenConnaissance(resultSet1.getString("moyen_connaissance"));
+                setNbTelephone(resultSet1.getInt("telephone"));
+                setEmail(resultSet1.getString("email"));
+                setMdp(resultSet1.getString("mot_de_passe"));
             }
         }
     }
@@ -409,7 +433,7 @@ public class Patient extends JFrame {
             container.removeAll();
             try {
                 modifInfo();
-            } catch (SQLException exception) {
+            } catch (SQLException | ClassNotFoundException exception) {
                 exception.printStackTrace();
             }
         });
@@ -461,7 +485,7 @@ public class Patient extends JFrame {
         calendrier.addColumn("Heure");
         calendrier.addColumn("Prix");
         calendrier.addColumn("Reglement");
-        calendrier.addColumn("Indicateur AnxiÃ©tÃ©");
+        calendrier.addColumn("Anxiete");
 
         JTable table = new JTable(calendrier);
         table.setCellSelectionEnabled(true);
@@ -471,30 +495,33 @@ public class Patient extends JFrame {
         frame.setVisible(true);
 
         try {
-            Connection connect = DriverManager.getConnection(url, user, mdp);
-            Statement statement = connect.createStatement();
-            String sql = "Select DateConsultation, Heure, Prix, Reglement, IndicateurAnxiete " +
-                    "from Consultation c inner join Patientenconsult e on c.NumeroConsultation = e.NumeroConsultation " +
-                    "inner join Patient p on e.NumeroDossier = p.NumeroDossier " +
-                    "where Email = '" + userField.getText() + "' " +
+        	Class.forName(JDBC_DRIVER);
+   
+            conn = DriverManager
+                    .getConnection(DB_URL, USER, PASS);
+            stmt = conn.createStatement();
+            String sql = "Select DateConsultation, Heure, Prix, Reglement, anxiete " +
+                    "from Consultation c inner join Rendez_Vous e on c.id_consultation = e.id_consultation " +
+                    "inner join Patient p on e.id_patient = p.id_patient " +
+                    "where email = '" + userField.getText() + "' " +
                     "Order by DateConsultation";
-            ResultSet result = statement.executeQuery(sql);
+            ResultSet result = stmt.executeQuery(sql);
             while (result.next()) {
                 calendrier.addRow(new Object[]{result.getString("DateConsultation"), result.getString("Heure"),
-                        result.getInt("Prix"), result.getString("Reglement"), result.getInt("IndicateurAnxiete")});
+                        result.getInt("Prix"), result.getString("Reglement"), result.getInt("Anxiete")});
             }
-        } catch (SQLException e) {
+        } catch (SQLException | ClassNotFoundException e) {
             System.out.println("Exception is " + e.getMessage());
         }
     }
 
-    public void modifInfo() throws SQLException {
+    public void modifInfo() throws SQLException, ClassNotFoundException {
         JFrame frame = new JFrame("Modifier vos informations");
         frame.setSize(400, 480);
         frame.setLocationRelativeTo(null);
         frame.setAlwaysOnTop(true);
 
-        JLabel TelephoneLabel = new JLabel("NumÃ©ro de tÃ©lÃ©phone");
+        JLabel TelephoneLabel = new JLabel("Numéro de téléphone");
         JLabel AdresseLabel = new JLabel("Adresse");
         JLabel UserLabel = new JLabel("Email");
         JLabel MdpLabel = new JLabel("Mot de Passe");
@@ -513,27 +540,33 @@ public class Patient extends JFrame {
         histProfession.setSelectedItem(null);
         histProfession.setPreferredSize(new Dimension(100, 20));
 
-        Connection connect = DriverManager.getConnection(url, user, mdp);
-        Statement statement = connect.createStatement();
-        String sql = "Select Titre from Profession where NumeroDossier = '" + getNbDossier() + "'" +
+        Class.forName(JDBC_DRIVER);
+  
+        conn = DriverManager
+                .getConnection(DB_URL, USER, PASS);
+        stmt = conn.createStatement();
+        String sql = "Select titre from Profession where id_patient = '" + getNbDossier() + "'" +
                 " Order by DateProfession";
-        ResultSet resultSet = statement.executeQuery(sql);
+        ResultSet resultSet = stmt.executeQuery(sql);
         while (resultSet.next()) {
-            histProfession.addItem(resultSet.getString("Titre"));
+            histProfession.addItem(resultSet.getString("titre"));
         }
 
         JButton valider = new JButton("Valider");
         valider.addActionListener(e -> {
             try {
-                Connection connection = DriverManager.getConnection(url, user, mdp);
-                Statement statement2 = connection.createStatement();
+            	Class.forName(JDBC_DRIVER);
+            	  
+                conn = DriverManager
+                        .getConnection(DB_URL, USER, PASS);
+                stmt = conn.createStatement();
                 String sql2 = "Update Patient " +
-                        " set NumeroTel = '" + TelephoneField.getText() + "', Adresse = '" + AdresseField.getText() + "', Email = '" + EmailField.getText() + "', MotDePasse = '" + passwordField.getText() + "', Profession = '" + ProfessionField.getText() + "', Classification = '" + ClassificationField.getText() + "'" +
-                        " where NumeroDossier = '" + getNbDossier() + "'";
-                statement2.executeUpdate(sql2);
+                        " set telephone = '" + TelephoneField.getText() + "', adresse = '" + AdresseField.getText() + "', email = '" + EmailField.getText() + "', MotDePasse = '" + passwordField.getText() + "', profession = '" + ProfessionField.getText() + "', classification = '" + ClassificationField.getText() + "'" +
+                        " where id_patient = '" + getNbDossier() + "'";
+                stmt.executeUpdate(sql2);
                 frame.dispose();
                 frame.removeAll();
-            } catch (SQLException exception) {
+            } catch (SQLException | ClassNotFoundException exception) {
                 exception.printStackTrace();
             }
         });
@@ -599,15 +632,18 @@ public class Patient extends JFrame {
                     break;
                 case 2:
                     try {
-                        Connection connect = DriverManager.getConnection(url, user, mdp);
-                        Statement statement = connect.createStatement();
-                        String sql = "select concat(Prenom, ' ', Nom) as Name from Patient" +
-                                " where Prenom != '" + prenom + "' and Nom != '" + nom + "'";
-                        ResultSet resultSet = statement.executeQuery(sql);
+                    	Class.forName(JDBC_DRIVER);
+                     
+                        conn = DriverManager
+                                .getConnection(DB_URL, USER, PASS);
+                        stmt = conn.createStatement();
+                        String sql = "select concat(prenom_patient, ' ', nom_patient) as Name from Patient" +
+                                " where prenom_patient != '" + prenom + "' and nom_patient != '" + nom + "'";
+                        ResultSet resultSet = stmt.executeQuery(sql);
                         while (resultSet.next()) {
                             patient2.addItem(resultSet.getString("Name"));
                         }
-                    } catch (SQLException exception) {
+                    } catch (SQLException | ClassNotFoundException exception) {
                         exception.printStackTrace();
                     }
 
@@ -633,11 +669,14 @@ public class Patient extends JFrame {
                     break;
                 case 3:
                     try {
-                        Connection connection = DriverManager.getConnection(url, user, mdp);
-                        Statement statement = connection.createStatement();
-                        String sql = "select concat(Prenom, ' ', Nom) as Name from Patient" +
-                                " where Prenom != '" + prenom + "' and Nom != '" + nom + "'";
-                        ResultSet resultSet = statement.executeQuery(sql);
+                    	Class.forName(JDBC_DRIVER);
+                        
+                        conn = DriverManager
+                                .getConnection(DB_URL, USER, PASS);
+                        stmt = conn.createStatement();
+                        String sql = "select concat(prenom_patient, ' ', nom_patient) as Name from Patient" +
+                                " where prenom_patient != '" + prenom + "' and nom_patient != '" + nom + "'";
+                        ResultSet resultSet = stmt.executeQuery(sql);
                         while (resultSet.next()) {
                             patient2.addItem(resultSet.getString("Name"));
                         }
@@ -646,17 +685,20 @@ public class Patient extends JFrame {
                         panel3.add(patientNb2);
                         panel3.add(patient2);
 
-                        JLabel patientNb3 = new JLabel("TroisiÃ¨me patient");
+                        JLabel patientNb3 = new JLabel("Troisième patient");
                         JComboBox<String> patient3 = new JComboBox<>();
                         patient3.setSelectedItem(null);
                         patient2.setSelectedItem(null);
 
                         try {
-                            Connection connect2 = DriverManager.getConnection(url, user, mdp);
-                            Statement statement1 = connect2.createStatement();
-                            String sql2 = "select concat(Prenom, ' ', Nom) as Name from Patient" +
-                                    " where Prenom != '" + prenom + "' and Nom != '" + nom + "'";
-                            ResultSet resultSet1 = statement1.executeQuery(sql2);
+                        	Class.forName(JDBC_DRIVER);
+
+                            conn = DriverManager
+                                    .getConnection(DB_URL, USER, PASS);
+                            stmt = conn.createStatement();
+                            String sql2 = "select concat(prenom_patient, ' ', prenom_patient) as Name from Patient" +
+                                    " where prenom_patient != '" + prenom + "' and nom_patient != '" + nom + "'";
+                            ResultSet resultSet1 = stmt.executeQuery(sql2);
                             while (resultSet1.next()) {
                                 patient3.addItem(resultSet1.getString("Name"));
                             }
@@ -691,7 +733,7 @@ public class Patient extends JFrame {
                         frame.add(panel3, BorderLayout.CENTER);
                         frame.setVisible(true);
 
-                    } catch (SQLException exception) {
+                    } catch (SQLException | ClassNotFoundException exception) {
                         exception.printStackTrace();
                     }
                     break;
@@ -761,82 +803,85 @@ public class Patient extends JFrame {
                     boolean check = false, sunday = false;
                     try{
                         check = checkAvailability(date, heure);
-                    } catch (SQLException exception) { exception.printStackTrace(); }
+                    } catch (SQLException | ClassNotFoundException exception) { exception.printStackTrace(); }
                     if(check){
                         try{
-                            Connection connect = DriverManager.getConnection(url, user, mdp);
-                            Statement statement = connect.createStatement();
+                        	Class.forName(JDBC_DRIVER);
+                       
+                            conn = DriverManager
+                                    .getConnection(DB_URL, USER, PASS);
+                            stmt = conn.createStatement();
                             String sql = "insert into Consultation (DateConsultation, Heure, Reglement)" +
                                     " values ('" + date + "','" + heure + "', '" + reglement + "')";
-                            statement.executeUpdate(sql);
+                            stmt.executeUpdate(sql);
 
                             int numdossier1, numconsult, numdossier2;
                             switch(nbpatient){
                                 case 1:
-                                    String sql2 = "select NumeroDossier from Patient where Nom = '" + nom + "' and Prenom = '" + prenom + "'";
-                                    ResultSet resultSet1 = statement.executeQuery(sql2);
+                                    String sql2 = "select id_patient from Patient where nom_patient = '" + nom + "' and prenom_patient = '" + prenom + "'";
+                                    ResultSet resultSet1 = stmt.executeQuery(sql2);
                                     resultSet1.next();
-                                    numdossier1 = resultSet1.getInt("NumeroDossier");
+                                    numdossier1 = resultSet1.getInt("id_patient");
 
-                                    String sql3 = "select NumeroConsultation from Consultation where DateConsultation = '" + date + "' and Heure = '" + heure + "'";
-                                    ResultSet resultSet2 = statement.executeQuery(sql3);
+                                    String sql3 = "select id_consultation from Consultation where DateConsultation = '" + date + "' and Heure = '" + heure + "'";
+                                    ResultSet resultSet2 = stmt.executeQuery(sql3);
                                     resultSet2.next();
-                                    numconsult = resultSet2.getInt("NumeroConsultation");
+                                    numconsult = resultSet2.getInt("id_consultation");
 
-                                    String sql4 = "insert into patientenconsult (NumeroDossier, NumeroConsultation) values ('" + numdossier1 + "', '" + numconsult + "')";
-                                    statement.executeUpdate(sql4);
+                                    String sql4 = "insert into Rendez_Vous (id_patient, id_consultation) values ('" + numdossier1 + "', '" + numconsult + "')";
+                                    stmt.executeUpdate(sql4);
                                     break;
                                 case 2:
-                                    String sqlPat = "select NumeroDossier from Patient where Nom = '" + nom + "' and Prenom = '" + prenom + "'";
-                                    ResultSet resultSetPat = statement.executeQuery(sqlPat);
+                                    String sqlPat = "select id_patient from Patient where nom_patient = '" + nom + "' and prenom_patient = '" + prenom + "'";
+                                    ResultSet resultSetPat = stmt.executeQuery(sqlPat);
                                     resultSetPat.next();
-                                    numdossier1 = resultSetPat.getInt("NumeroDossier");
+                                    numdossier1 = resultSetPat.getInt("id_patient");
 
-                                    String sql5 = "select NumeroDossier from Patient where Prenom = '" + args[0] + "' and Nom = '" + args[1] + "'";
-                                    ResultSet resultSet = statement.executeQuery(sql5);
+                                    String sql5 = "select id_patient from Patient where prenom_patient = '" + args[0] + "' and nom_patient = '" + args[1] + "'";
+                                    ResultSet resultSet = stmt.executeQuery(sql5);
                                     resultSet.next();
-                                    numdossier2 = resultSet.getInt("NumeroDossier");
+                                    numdossier2 = resultSet.getInt("id_patient");
 
-                                    String sql100 = "select NumeroConsultation from Consultation where DateConsultation = '" + date + "' and Heure = '" + heure + "'";
-                                    ResultSet resultSet100 = statement.executeQuery(sql100);
+                                    String sql100 = "select id_consultation from Consultation where DateConsultation = '" + date + "' and Heure = '" + heure + "'";
+                                    ResultSet resultSet100 = stmt.executeQuery(sql100);
                                     resultSet100.next();
-                                    numconsult = resultSet100.getInt("NumeroConsultation");
+                                    numconsult = resultSet100.getInt("id_consultation");
 
-                                    String sql6 = "insert into patientenconsult (NumeroDossier, NumeroConsultation) values ('" + numdossier1 + "', '" + numconsult + "' )";
-                                    statement.executeUpdate(sql6);
+                                    String sql6 = "insert into Rendez_Vous (id_patient, id_consultation) values ('" + numdossier1 + "', '" + numconsult + "' )";
+                                    stmt.executeUpdate(sql6);
 
-                                    String sql7 = "insert into patientenconsult (NumeroDossier, NumeroConsultation) values ('" + numdossier2 + "', '" + numconsult + "' )";
-                                    statement.executeUpdate(sql7);
+                                    String sql7 = "insert into Rendez_Vous (id_patient, id_consultation) values ('" + numdossier2 + "', '" + numconsult + "' )";
+                                    stmt.executeUpdate(sql7);
                                     break;
                                 case 3:
-                                    String sqlPat2 = "select NumeroDossier from Patient where Nom = '" + nom + "' and Prenom = '" + prenom + "'";
-                                    ResultSet resultSetPat2 = statement.executeQuery(sqlPat2);
+                                    String sqlPat2 = "select id_patient from Patient where nom_patient = '" + nom + "' and prenom_patient = '" + prenom + "'";
+                                    ResultSet resultSetPat2 = stmt.executeQuery(sqlPat2);
                                     resultSetPat2.next();
-                                    numdossier1 = resultSetPat2.getInt("NumeroDossier");
+                                    numdossier1 = resultSetPat2.getInt("id_patient");
 
-                                    String sql8 = "select NumeroDossier from Patient where Prenom = '" + args[0] + "' and Nom = '" + args[1] + "'";
-                                    ResultSet resultSet3 = statement.executeQuery(sql8);
+                                    String sql8 = "select id_patient from Patient where prenom_patient = '" + args[0] + "' and nom_patient = '" + args[1] + "'";
+                                    ResultSet resultSet3 = stmt.executeQuery(sql8);
                                     resultSet3.next();
-                                    numdossier2 = resultSet3.getInt("NumeroDossier");
+                                    numdossier2 = resultSet3.getInt("id_patient");
 
-                                    String sql9 = "select NumeroDossier from Patient where Prenom = '" + args[2] + "' and Nom = '" + args[3] + "'";
-                                    ResultSet resultSet4 = statement.executeQuery(sql9);
+                                    String sql9 = "select id_patient from Patient where prenom_patient = '" + args[2] + "' and nom_patient = '" + args[3] + "'";
+                                    ResultSet resultSet4 = stmt.executeQuery(sql9);
                                     resultSet4.next();
-                                    int numdossier3 = resultSet4.getInt("NumeroDossier");
+                                    int numdossier3 = resultSet4.getInt("id_patient");
 
-                                    String sql1000 = "select NumeroConsultation from Consultation where DateConsultation = '" + date + "' and Heure = '" + heure + "'";
-                                    ResultSet resultSet1000 = statement.executeQuery(sql1000);
+                                    String sql1000 = "select id_consultation from Consultation where DateConsultation = '" + date + "' and Heure = '" + heure + "'";
+                                    ResultSet resultSet1000 = stmt.executeQuery(sql1000);
                                     resultSet1000.next();
-                                    numconsult = resultSet1000.getInt("NumeroConsultation");
+                                    numconsult = resultSet1000.getInt("id_consultation");
 
-                                    String sql10 = "insert into patientenconsult (NumeroDossier, NumeroConsultation) values ('" + numdossier1 + "', '" + numconsult + "' )";
-                                    statement.executeUpdate(sql10);
+                                    String sql10 = "insert into Rendez_Vous (id_patient, id_consultation) values ('" + numdossier1 + "', '" + numconsult + "' )";
+                                    stmt.executeUpdate(sql10);
 
-                                    String sql11 = "insert into patientenconsult (NumeroDossier, NumeroConsultation) values ('" + numdossier2 + "', '" + numconsult + "' )";
-                                    statement.executeUpdate(sql11);
+                                    String sql11 = "insert into Rendez_Vous (id_patient, id_consultation) values ('" + numdossier2 + "', '" + numconsult + "' )";
+                                    stmt.executeUpdate(sql11);
 
-                                    String sql12 = "insert into patientenconsult (NumeroDossier, NumeroConsultation) values ('" + numdossier3 + "', '" + numconsult + "' )";
-                                    statement.executeUpdate(sql12);
+                                    String sql12 = "insert into Rendez_Vous (id_patient, id_consultation) values ('" + numdossier3 + "', '" + numconsult + "' )";
+                                    stmt.executeUpdate(sql12);
                                     break;
                             }
                             frame.dispose();
@@ -870,11 +915,14 @@ public class Patient extends JFrame {
         frame.setVisible(true);
     }
 
-    public boolean checkAvailability(String date, String heure) throws SQLException {
-        Connection connect = DriverManager.getConnection(url, user, mdp);
-        Statement statement = connect.createStatement();
+    public boolean checkAvailability(String date, String heure) throws SQLException, ClassNotFoundException {
+    	Class.forName(JDBC_DRIVER);
+       
+        conn = DriverManager
+                .getConnection(DB_URL, USER, PASS);
+        stmt = conn.createStatement();
         String sql = "select DateConsultation, Heure from Consultation Order by DateConsultation ";
-        ResultSet resultSet = statement.executeQuery(sql);
+        ResultSet resultSet = stmt.executeQuery(sql);
 
         ArrayList<String> arrayDate = new ArrayList<>();
         ArrayList<String> arrayHeure = new ArrayList<>();
